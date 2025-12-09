@@ -89,6 +89,32 @@ export const LogExtractor: React.FC = () => {
     }
   }, [logOutput, copyButtonText]);
 
+  const handleClearLogs = useCallback(() => {
+    setJsonInput('');
+    setLogOutput('No logs extracted yet. Paste JSON above and click "Extract Logs".');
+    setIsError(false);
+    setStats(null);
+    setCopyButtonText('📋 Copy Logs');
+    setCopyButtonStyle('btn-primary');
+  }, []);
+
+  const handleExportLogs = useCallback(() => {
+    if (!stats || isError) {
+      return;
+    }
+
+    const blob = new Blob([logOutput], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    link.href = url;
+    link.download = `logs-${timestamp}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [logOutput, stats, isError]);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey && e.key === 'Enter') {
       handleExtractLogs();
@@ -113,18 +139,34 @@ export const LogExtractor: React.FC = () => {
           onKeyDown={handleKeyDown}
         />
 
-        <button className="btn-primary" onClick={handleExtractLogs}>
-          Extract Logs
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button className="btn-primary" onClick={handleExtractLogs}>
+            Extract Logs
+          </button>
+          <button
+            className="bg-gradient-to-br from-gray-500 to-gray-400 text-white border-none rounded-lg font-semibold cursor-pointer transition-transform duration-200 px-5 py-2 text-sm hover:scale-105 active:scale-95"
+            onClick={handleClearLogs}
+          >
+            🗑️ Clear
+          </button>
+        </div>
       </div>
 
       <div className="card mt-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800 m-0">Extracted Logs</h2>
           {stats && (
-            <button className={copyButtonStyle} onClick={handleCopyLogs}>
-              {copyButtonText}
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button className={copyButtonStyle} onClick={handleCopyLogs}>
+                {copyButtonText}
+              </button>
+              <button
+                className="bg-gradient-to-br from-blue-500 to-blue-400 text-white border-none rounded-lg font-semibold cursor-pointer transition-transform duration-200 px-5 py-2 text-sm hover:scale-105 active:scale-95"
+                onClick={handleExportLogs}
+              >
+                💾 Export to File
+              </button>
+            </div>
           )}
         </div>
         <div
